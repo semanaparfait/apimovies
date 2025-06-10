@@ -15,7 +15,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            /* overflow: hidden; */
+            overflow: hidden;
         }
         
         h1 {
@@ -55,38 +55,20 @@
             background: linear-gradient(90deg, #dd2476, #ff512f);
             transform: scale(1.05);
         }
-#result {
-    margin-top: 40px;
-    min-height: 120px;
-    width: 100%;
-    /* Remove or increase max-width if you want more cards per row */
-    max-width: 1000px;
-    background: rgba(34, 34, 34, 0.85);
-    border-radius: 18px;
-    box-shadow: 0 8px 32px #0006;
-    padding: 32px 28px;
-    font-size: 1.1rem;
-    opacity: 0;
-    transform: translateY(30px);
-    transition: opacity 0.7s cubic-bezier(.4,0,.2,1), transform 0.7s cubic-bezier(.4,0,.2,1);
-    display: flex;
-    flex-wrap: wrap;
-    gap: 20px;
-    justify-content: center;
-    align-items: stretch;
-}
-.show-card {
-    background: #222c;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px #0005;
-    padding: 18px;
-    margin: 10px 0;
-    max-width: 320px;
-    min-width: 220px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
+        #result {
+            margin-top: 40px;
+            min-height: 120px;
+            width: 100%;
+            max-width: 500px;
+            background: rgba(34, 34, 34, 0.85);
+            border-radius: 18px;
+            box-shadow: 0 8px 32px #0006;
+            padding: 32px 28px;
+            font-size: 1.1rem;
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.7s cubic-bezier(.4,0,.2,1), transform 0.7s cubic-bezier(.4,0,.2,1);
+        }
         #result.show {
             opacity: 1;
             transform: translateY(0);
@@ -146,51 +128,44 @@
             const resultDiv = document.getElementById('result');
             resultDiv.classList.remove('show');
         }
-        document.getElementById('searchInput').addEventListener('keyup', function(event) {
-            if (event.key === 'Enter') {
-                document.getElementById('searchBtn').click();
-            }
-        });
-        document.getElementById('searchBtn').addEventListener('click', function() {
-            const query = document.getElementById('searchInput').value.trim();
-            if (!query) {
-                showResult("Please enter a show name.");
+       // Add this outside the click handler
+document.getElementById('searchInput').addEventListener('keyup', function(event) {
+    if (event.key === 'Enter') {
+        document.getElementById('searchBtn').click();
+    }
+});
+
+document.getElementById('searchBtn').addEventListener('click', function() {
+    const query = document.getElementById('searchInput').value.trim();
+    if (!query) {
+        showResult("Please enter a show name.");
+        return;
+    }
+    hideResult();
+    fetch(`https://api.tvmaze.com/search/shows?q=${encodeURIComponent(query)}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.length === 0) {
+                showResult("No results found.");
                 return;
             }
-            hideResult();
-            fetch(`https://api.tvmaze.com/search/shows?q=${encodeURIComponent(query)}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.length === 0) {
-                        showResult("No results found.");
-                        return;
-                    }
-                    let resultHtml = '';
-                    data.forEach(item => {
-                        const show = item.show;
-                        const movieId = show.id;
-                        const image = show.image ? show.image.medium : 'https://via.placeholder.com/210x295?text=No+Image';
-                        const name = show.name;
-                        const summary = show.summary || "No description available.";
-                        const genres = show.genres.length ? show.genres.join(', ') : "No genres listed.";
-                        resultHtml += `
-                            <div class="show-card">
-                                <img src="${image}" alt="${name}">
-                                <h2>${name}</h2>
-                                <p>${summary}</p>
-                                <p><strong>Genres:</strong> ${genres}</p>
-                                <p><strong>Movie Id:</strong> ${movieId}</p>
-                            </div>
-                        `;
-                    });
-                    showResult(resultHtml);
-                   
-                })
-                .catch(error => {
-                    showResult("Error fetching data.");
-                    console.error(error);
-                });
+            const show = data[0].show;
+            const name = show.name;
+            const summary = show.summary || "No description available.";
+            const genres = show.genres.length ? show.genres.join(', ') : "No genres listed.";
+            const bgimage = show.image ? show.image.original : 'https://via.placeholder.com/500x750?text=No+Image';
+            document.getElementById('bgImage').src = bgimage;
+            showResult(`
+                <h2>${name}</h2>
+                <p>${summary}</p>
+                <p><strong>Genres:</strong> ${genres}</p>
+            `);
+        })
+        .catch(error => {
+            showResult("Error fetching data.");
+            console.error(error);
         });
+});
     </script>
 </body>
 </html>
